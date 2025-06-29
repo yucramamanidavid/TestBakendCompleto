@@ -39,10 +39,10 @@
 
         <!-- ✅ Configuración MySQL para entorno Docker (desde Jenkins) -->
         <env name="DB_CONNECTION" value="mysql"/>
-        <env name="DB_HOST" value="mysql"/>
+        <env name="DB_HOST" value="127.0.0.1"/>
         <env name="DB_PORT" value="3306"/>
         <env name="DB_DATABASE" value="nuevoweb"/>
-        <env name="DB_USERNAME" value="davidlord"/>
-        <env name="DB_PASSWORD" value="Da123456*"/>
+        <env name="DB_USERNAME" value="root"/>
+        <env name="DB_PASSWORD" value=""/>
     </php>
 </phpunit>

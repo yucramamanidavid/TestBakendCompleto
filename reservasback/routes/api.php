@@ -129,8 +129,8 @@ Route::middleware('auth:sanctum')->post('/entrepreneurs', [EntrepreneurControlle
 Route::middleware('auth:sanctum')->get('/entrepreneur/authenticated', [EntrepreneurController::class, 'showAuthenticatedEntrepreneur']);
 
 // Asociaciones y Categorías
-Route::apiResource('associations', AssociationController::class);
 Route::get('/associations/count', [AssociationController::class, 'count'])->middleware('auth:sanctum');
+Route::apiResource('associations', AssociationController::class);
 
 Route::apiResource('categories', CategoryController::class);
 Route::get('categories/count', [CategoryController::class, 'count']);

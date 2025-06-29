@@ -7,59 +7,64 @@ use Illuminate\Http\Request;
 
 class AssociationController extends Controller
 {
-    // Listar todas las asociaciones
+    protected $association;
+
+    public function __construct(Association $association)
+    {
+        $this->association = $association;
+    }
+
     public function index()
     {
-        $associations = Association::all();
+        $associations = $this->association->all();
         return response()->json($associations);
     }
 
-    // Crear una nueva asociación
     public function store(Request $request)
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255|unique:associations',
             'description' => 'nullable|string',
-            'region' => 'nullable|string|max:100'
+            'region' => 'nullable|string|max:100',
         ]);
 
-        $association = Association::create($validated);
+        $association = $this->association->create($validated);
         return response()->json($association, 201);
     }
 
-    // Mostrar una asociación específica
-    public function show(Association $association)
+    public function show($id)
     {
-        return response()->json($association->load('entrepreneurs'));
-    }
-
-    // Actualizar una asociación
-    public function update(Request $request, Association $association)
-    {
-        $validated = $request->validate([
-            'name' => 'sometimes|string|max:255|unique:associations,name,' . $association->id,
-            'description' => 'nullable|string',
-            'region' => 'nullable|string|max:100'
-        ]);
-
-        $association->update($validated);
+        $association = $this->association->with('entrepreneurs')->findOrFail($id);
         return response()->json($association);
     }
 
-    // Eliminar una asociación (solo si no tiene emprendedores asociados)
-    public function destroy(Association $association)
-{
-    // Eliminar emprendedores primero (solo si es lo que quieres)
-    $association->entrepreneurs()->delete();
+    public function update(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'name' => 'sometimes|string|max:255|unique:associations,name,' . $id,
+            'description' => 'nullable|string',
+            'region' => 'nullable|string|max:100',
+        ]);
 
-    $association->delete();
-    return response()->json(['message' => 'Asociación y emprendedores eliminados']);
-}
+        $association = $this->association->findOrFail($id);
+        $association->update($validated);
 
-public function count()
-{
-    $count = Association::count();  // Asumiendo que tienes un modelo Association
-    return response()->json($count);
-}
+        return response()->json($association);
+    }
+
+    public function destroy($id)
+    {
+        $association = $this->association->findOrFail($id);
+        $association->entrepreneurs()->delete();
+        $association->delete();
+
+        return response()->json(['message' => 'Asociación y emprendedores eliminados']);
+    }
+
+    public function count()
+    {
+        $count = $this->association->count();
+        return response()->json(['count' => $count]);
+    }
 
 }
