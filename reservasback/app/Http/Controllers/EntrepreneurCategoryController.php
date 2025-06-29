@@ -8,50 +8,68 @@ use Illuminate\Http\Request;
 
 class EntrepreneurCategoryController extends Controller
 {
-    // 1. Listar todas las asignaciones emprendedor–categoría
     public function index()
     {
         return response()->json(EntrepreneurCategory::all());
     }
 
-    // 2. Crear una asignación (asignar categoría a emprendedor)
     public function store(Request $request)
     {
         $data = $request->validate([
             'entrepreneur_id' => 'required|exists:entrepreneurs,id',
-            'category_id'     => 'required|exists:categories,id',
+            'category_id' => 'required|exists:categories,id',
         ]);
 
         $ec = EntrepreneurCategory::create($data);
+
         return response()->json($ec, 201);
     }
 
-    // 3. Mostrar una asignación específica
-    public function show(EntrepreneurCategory $entrepreneurCategory)
+    public function show($entrepreneur_id, $category_id)
     {
-        return response()->json($entrepreneurCategory);
+        $assignment = EntrepreneurCategory::where('entrepreneur_id', $entrepreneur_id)
+            ->where('category_id', $category_id)
+            ->firstOrFail();
+
+        return response()->json($assignment);
     }
-    public function update(Request $request, EntrepreneurCategory $entrepreneurCategory)
+
+    public function update(Request $request, $entrepreneur_id, $category_id)
     {
         $data = $request->validate([
             'entrepreneur_id' => 'required|exists:entrepreneurs,id',
-            'category_id'     => 'required|exists:categories,id',
+            'category_id' => 'required|exists:categories,id',
         ]);
 
-        $entrepreneurCategory->update($data);
-        return response()->json($entrepreneurCategory);
+        // Hacer update directamente con where
+        EntrepreneurCategory::where('entrepreneur_id', $entrepreneur_id)
+            ->where('category_id', $category_id)
+            ->update($data);
+
+        // Devolver el nuevo registro actualizado
+        $updated = EntrepreneurCategory::where('entrepreneur_id', $data['entrepreneur_id'])
+            ->where('category_id', $data['category_id'])
+            ->first();
+
+        return response()->json($updated);
     }
 
-    // 4. Eliminar una asignación (desasignar)
-    public function destroy(EntrepreneurCategory $entrepreneurCategory)
+    public function destroy($entrepreneur_id, $category_id)
     {
-        $entrepreneurCategory->delete();
-        return response()->json(['message' => 'Categoría desasignada del emprendedor']);
+        EntrepreneurCategory::where('entrepreneur_id', $entrepreneur_id)
+            ->where('category_id', $category_id)
+            ->delete();
+
+        return response()->json([
+            'message' => 'Categoría desasignada del emprendedor'
+        ]);
     }
+
     public function count()
-{
-    return response()->json([
-        'count' => Category::count()
-    ]);
+    {
+        return response()->json([
+            'count' => Category::count()
+        ]);
+    }
 }
-}
+// This controller manages the many-to-many relationship between entrepreneurs and categories.

@@ -2,11 +2,13 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Factories\HasFactory;  // <- agregar esto
 use Illuminate\Database\Eloquent\Model;
 
 class EntrepreneurCategory extends Model
 {
+    use HasFactory;  // <- agregar esto
+
     // Si tu pivot no usa timestamps:
     public $timestamps = false;
 

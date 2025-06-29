@@ -135,8 +135,13 @@ Route::apiResource('associations', AssociationController::class);
 Route::apiResource('categories', CategoryController::class);
 Route::get('categories/count', [CategoryController::class, 'count']);
 
-Route::apiResource('entrepreneur-categories', EntrepreneurCategoryController::class)
-     ->only(['index', 'store', 'show', 'destroy']);
+// Rutas para EntrepreneurCategory con clave compuesta
+Route::get('entrepreneur-categories', [EntrepreneurCategoryController::class, 'index']);
+Route::post('entrepreneur-categories', [EntrepreneurCategoryController::class, 'store']);
+
+Route::get('entrepreneur-categories/{entrepreneur_id}/{category_id}', [EntrepreneurCategoryController::class, 'show']);
+Route::put('entrepreneur-categories/{entrepreneur_id}/{category_id}', [EntrepreneurCategoryController::class, 'update']);
+Route::delete('entrepreneur-categories/{entrepreneur_id}/{category_id}', [EntrepreneurCategoryController::class, 'destroy']);
 
 // === PRODUCTOS ===
 // Rutas públicas para listar y ver productos
