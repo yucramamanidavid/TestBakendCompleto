@@ -138,13 +138,21 @@ Route::get('categories/count', [CategoryController::class, 'count']);
 Route::apiResource('entrepreneur-categories', EntrepreneurCategoryController::class)
      ->only(['index', 'store', 'show', 'destroy']);
 
-// Productos
+// === PRODUCTOS ===
+// Rutas públicas para listar y ver productos
+Route::get('products', [ProductController::class, 'index']);
+Route::get('products/{id}', [ProductController::class, 'show']);
+
+// Rutas protegidas para gestionar productos (crear, actualizar, borrar, imágenes)
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('products/my', [ProductController::class, 'myProducts']);
-    Route::get('products', [ProductController::class, 'index']);
-    Route::get('products/{id}', [ProductController::class, 'show']);
-    Route::resource('products', ProductController::class)->only(['store', 'update', 'destroy']);
+    Route::post('products', [ProductController::class, 'store']);
+    Route::put('products/{id}', [ProductController::class, 'update']);
+    Route::delete('products/{id}', [ProductController::class, 'destroy']);
+    Route::post('products/{product}/images', [ProductController::class, 'addImage']);
+    Route::delete('products/{product}/images/{image}', [ProductController::class, 'deleteImage']);
 });
+
 
 // Dashboard Admin
 Route::middleware(['auth:sanctum', 'can:access-admin'])->get('/admin/dashboard-counts', [EntrepreneurController::class, 'counts']);
@@ -200,7 +208,7 @@ Route::middleware('auth:sanctum')->group(function () {
 });
 Route::post('/reservations/direct-sale', [ReservationController::class, 'directSale']);
 Route::get('/reservations/emprendedor/{id}', [ReservationController::class, 'entrepreneurReservations']);
-Route::middleware('auth:sanctum')->get('/products', [ProductController::class, 'index']);
+
 Route::put('/reservations/{id}', [ReservationController::class, 'update']);
 Route::middleware('auth:sanctum')->get('/custom-packages', [CustomPackageController::class, 'index']);
 Route::prefix('boletas')->group(function () {

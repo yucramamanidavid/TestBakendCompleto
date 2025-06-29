@@ -16,6 +16,7 @@ class HomepageSetting extends Model
         'description',
         'background_color',
         'image_path',
+        'active',
     ];
     protected $casts = [
         'image_path' => 'array',

@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Category extends Model {
+    use HasFactory;
     protected $fillable = ['name', 'icon'];
 
     public function entrepreneurs(): BelongsToMany {

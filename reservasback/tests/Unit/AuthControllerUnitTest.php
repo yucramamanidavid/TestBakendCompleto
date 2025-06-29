@@ -1,4 +1,5 @@
 <?php
+
 namespace Tests\Unit;
 
 use App\Http\Controllers\AuthController;
@@ -34,6 +35,25 @@ class AuthControllerUnitTest extends TestCase
     }
 
     /** @test */
+/** @test */
+    public function it_cannot_register_with_invalid_role()
+    {
+        $this->expectException(\Illuminate\Validation\ValidationException::class);
+
+        $request = Request::create('/api/register', 'POST', [
+            'name' => 'Ana',
+            'email' => 'ana2@example.com',
+            'password' => '12345678',
+            'password_confirmation' => '12345678',
+            'role' => 'fake',
+        ]);
+
+        $controller = new AuthController();
+        $controller->register($request); // Aquí es donde se lanzará la excepción
+    }
+
+
+    /** @test */
     public function it_can_get_user_role_directly()
     {
         Role::create(['name' => 'cliente']);
@@ -45,5 +65,13 @@ class AuthControllerUnitTest extends TestCase
 
         $this->assertEquals(200, $response->status());
         $this->assertStringContainsString('Luis', $response->getContent());
+    }
+
+    /** @test */
+    public function it_returns_404_if_user_role_not_found()
+    {
+        $controller = new AuthController();
+        $response = $controller->getUserRole(9999);
+        $this->assertEquals(404, $response->status());
     }
 }
