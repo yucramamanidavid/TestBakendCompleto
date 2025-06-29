@@ -216,6 +216,7 @@ Route::prefix('boletas')->group(function () {
     Route::get('/cliente/{userId}', [ElectronicReceiptController::class, 'indexCliente']);
     Route::get('/emprendedor/{emprendedorId}', [ElectronicReceiptController::class, 'indexEmprendedor']);
 });
+Route::get('/abouts/{id}', [AboutController::class, 'show']);
 
 Route::post('/boletas/{id}/enviar-correo', [ElectronicReceiptController::class, 'enviarCorreo']);
 Route::post('/reservations/direct-sale', [ReservationController::class, 'directSale']);

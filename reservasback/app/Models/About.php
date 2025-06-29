@@ -8,7 +8,9 @@ use Illuminate\Database\Eloquent\Model;
 // app/Models/About.php
 
 class About extends Model
+
 {
+    use HasFactory;
     protected $fillable = ['title','content','image','active'];
 
     protected $casts = [
