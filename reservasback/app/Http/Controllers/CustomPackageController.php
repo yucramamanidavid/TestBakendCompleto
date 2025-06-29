@@ -15,8 +15,11 @@ class CustomPackageController extends Controller
      */
     public function index()
     {
-        $user = Auth::user();
-        $packages = CustomPackage::with('products')->where('user_id', $user->id)->latest()->get();
+        $userId = $this->getUserId();
+        $packages = CustomPackage::with('products')
+            ->where('user_id', $userId)
+            ->latest()
+            ->get();
 
         return response()->json($packages);
     }
@@ -28,7 +31,7 @@ class CustomPackageController extends Controller
     {
         $package = CustomPackage::with(['products'])->find($id);
 
-        if (!$package || $package->user_id !== Auth::id()) {
+        if (!$package || $package->user_id !== $this->getUserId()) {
             return response()->json(['error' => 'Paquete no encontrado'], 404);
         }
 
@@ -52,23 +55,13 @@ class CustomPackageController extends Controller
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
-        // Crear paquete
         $package = CustomPackage::create([
-            'user_id' => Auth::id(),
+            'user_id' => $this->getUserId(),
             'name' => $request->name,
             'status' => $request->status ?? 'borrador',
         ]);
 
-        $total = 0;
-
-        foreach ($request->products as $productData) {
-            $product = Product::find($productData['id']);
-            $quantity = $productData['quantity'];
-
-            $package->products()->attach($product->id, ['quantity' => $quantity]);
-
-            $total += $product->price * $quantity;
-        }
+        $total = $this->attachProductsAndCalculateTotal($package, $request->products);
 
         $package->total_amount = $total;
         $package->save();
@@ -81,7 +74,7 @@ class CustomPackageController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $package = CustomPackage::where('user_id', Auth::id())->find($id);
+        $package = CustomPackage::where('user_id', $this->getUserId())->find($id);
 
         if (!$package) {
             return response()->json(['error' => 'Paquete no encontrado'], 404);
@@ -107,15 +100,7 @@ class CustomPackageController extends Controller
         if ($request->has('products')) {
             $package->products()->detach();
 
-            $total = 0;
-
-            foreach ($request->products as $productData) {
-                $product = Product::find($productData['id']);
-                $quantity = $productData['quantity'];
-                $package->products()->attach($product->id, ['quantity' => $quantity]);
-
-                $total += $product->price * $quantity;
-            }
+            $total = $this->attachProductsAndCalculateTotal($package, $request->products);
 
             $package->total_amount = $total;
             $package->save();
@@ -129,7 +114,7 @@ class CustomPackageController extends Controller
      */
     public function destroy($id)
     {
-        $package = CustomPackage::where('user_id', Auth::id())->find($id);
+        $package = CustomPackage::where('user_id', $this->getUserId())->find($id);
 
         if (!$package) {
             return response()->json(['error' => 'Paquete no encontrado'], 404);
@@ -140,4 +125,30 @@ class CustomPackageController extends Controller
         return response()->json(['message' => 'Paquete eliminado']);
     }
 
+    /**
+     * Obtener el ID del usuario autenticado (permite mock en tests).
+     */
+    protected function getUserId()
+    {
+        return Auth::id();
+    }
+
+    /**
+     * Adjuntar productos y calcular monto total.
+     */
+    private function attachProductsAndCalculateTotal($package, $products)
+    {
+        $total = 0;
+
+        foreach ($products as $productData) {
+            $product = Product::find($productData['id']);
+            $quantity = $productData['quantity'];
+
+            $package->products()->attach($product->id, ['quantity' => $quantity]);
+
+            $total += $product->price * $quantity;
+        }
+
+        return $total;
+    }
 }
