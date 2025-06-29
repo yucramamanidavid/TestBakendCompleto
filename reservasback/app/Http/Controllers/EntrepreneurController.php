@@ -33,15 +33,13 @@ class EntrepreneurController extends Controller
 
     /**
      * Crear nuevo emprendedor.
-     * - Si viene user_id, crea solo el perfil.
-     * - Si no, asume admin y crea user + perfil + asigna rol.
      */
     public function store(Request $request)
     {
         $isAdminFlow = !$request->filled('user_id');
 
         $rules = $isAdminFlow
-            ? [   // Flujo admin (RUC opcional)
+            ? [
                 'name'           => 'required|string|max:255',
                 'email'          => 'required|email|unique:users,email',
                 'business_name'  => 'required|string|max:150',
@@ -57,7 +55,7 @@ class EntrepreneurController extends Controller
                 'categories'     => 'array',
                 'categories.*'   => 'exists:categories,id',
             ]
-            : [   // Flujo normal (RUC opcional)
+            : [
                 'user_id'        => 'required|exists:users,id|unique:entrepreneurs,user_id',
                 'business_name'  => 'required|string|max:150',
                 'ruc'            => 'nullable|string|size:11|unique:entrepreneurs,ruc',
@@ -77,7 +75,6 @@ class EntrepreneurController extends Controller
 
         DB::beginTransaction();
         try {
-            // Flujo admin: crear usuario + asignar rol 'emprendedor'
             if ($isAdminFlow) {
                 $password = Str::random(10);
                 $user = User::create([
@@ -90,29 +87,22 @@ class EntrepreneurController extends Controller
                     $user->assignRole('emprendedor');
                 }
 
-                // Asignar user_id al emprendedor
                 $data['user_id'] = $user->id;
             }
 
-            // Manejo de imagen de perfil
             if ($request->hasFile('profile_image')) {
                 $data['profile_image'] = $request->file('profile_image')->store('entrepreneurs', 'public');
             }
 
-            // Asignación del estado por defecto 'activo'
             $entrepreneurData = array_merge($data, ['status' => 'activo']);
-
-            // Crear perfil emprendedor
             $entrepreneur = Entrepreneur::create($entrepreneurData);
 
-            // Sincronizar categorías
             if (!empty($data['categories'])) {
                 $entrepreneur->categories()->sync($data['categories']);
             }
 
             DB::commit();
 
-            // Respuesta de éxito con datos
             $response = [
                 'message' => 'Emprendedor creado exitosamente',
                 'entrepreneur' => $entrepreneur->load(['user', 'association', 'place', 'categories']),
@@ -146,7 +136,7 @@ class EntrepreneurController extends Controller
     }
 
     /**
-     * Actualizar perfil de emprendedor (y opcionalmente datos de user).
+     * Actualizar perfil de emprendedor.
      */
     public function update(Request $request, Entrepreneur $entrepreneur)
     {
@@ -209,13 +199,12 @@ class EntrepreneurController extends Controller
     }
 
     /**
-     * Eliminar emprendedor (y opcionalmente usuario).
+     * Eliminar emprendedor.
      */
     public function destroy(Entrepreneur $entrepreneur)
     {
         DB::beginTransaction();
         try {
-            // Si el usuario no tiene otra relación, eliminarlo también.
             $user = $entrepreneur->user;
             if ($user->entrepreneur()->count() == 1) {
                 $user->delete();
@@ -249,54 +238,52 @@ class EntrepreneurController extends Controller
      * Cambiar estado del emprendedor.
      */
     public function toggleStatus(Entrepreneur $entrepreneur)
-{
-    DB::beginTransaction();
+    {
+        DB::beginTransaction();
 
-    try {
-        // Obtener el siguiente estado
-        $newStatus = $this->getNextStatus($entrepreneur->status);
+        try {
+            $newStatus = $this->getNextStatus($entrepreneur->status);
 
-        if (!$newStatus) {
-            throw new \Exception("Estado no válido para el emprendedor.");
+            if (!$newStatus) {
+                throw new \Exception("Estado no válido para el emprendedor.");
+            }
+
+            $entrepreneur->update(['status' => $newStatus]);
+
+            DB::commit();
+
+            return response()->json([
+                'message' => 'Estado del emprendedor actualizado',
+                'entrepreneur' => $entrepreneur->load(['user', 'association', 'place', 'categories']),
+            ]);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            return response()->json([
+                'message' => 'Error al actualizar el estado del emprendedor',
+                'error' => $e->getMessage(),
+                'trace' => $e->getTrace(),
+            ], 500);
         }
-
-        // Actualizar el estado
-        $entrepreneur->update(['status' => $newStatus]);
-
-        DB::commit();
-
-        return response()->json([
-            'message' => 'Estado del emprendedor actualizado',
-            'entrepreneur' => $entrepreneur->load(['user', 'association', 'place', 'categories']),
-        ]);
-    } catch (\Throwable $e) {
-        DB::rollBack();
-        return response()->json([
-            'message' => 'Error al actualizar el estado del emprendedor',
-            'error' => $e->getMessage(),
-        ], 500);
     }
-}
 
     /**
-     * Obtener el siguiente estado del emprendedor.
+     * Obtener el siguiente estado.
      */
     private function getNextStatus($currentStatus)
     {
         switch ($currentStatus) {
             case 'activo':
-                return 'inactivo';
-            case 'inactivo':
                 return 'suspendido';
             case 'suspendido':
                 return 'activo';
             default:
-                // Si no es un estado conocido, lanzar una excepción
                 throw new \Exception("Estado inválido: $currentStatus");
         }
     }
+
+
     /**
-     * Obtener el perfil del emprendedor autenticado.
+     * Mostrar emprendedor autenticado.
      */
     public function showAuthenticatedEntrepreneur()
     {
@@ -308,15 +295,12 @@ class EntrepreneurController extends Controller
 
             $entrepreneur = $user->entrepreneur;
             if (!$entrepreneur) {
-                return response()->json(['message' => 'Perfil de emprendedor no encontrado', 'reservations.payment'], 404);
+                return response()->json(['message' => 'Perfil de emprendedor no encontrado'], 404);
             }
 
-            // Carga conteos y relaciones
             $entrepreneur = Entrepreneur::with(['user','association','place','categories'])
-    ->findOrFail($entrepreneur->id);
+                ->findOrFail($entrepreneur->id);
 
-
-            // Historial
             $history = method_exists($entrepreneur, 'activities')
                 ? $entrepreneur->activities()->orderBy('created_at','desc')->get(['created_at','type','action','details'])
                 : [
@@ -327,19 +311,15 @@ class EntrepreneurController extends Controller
             return response()->json(compact('entrepreneur','history'));
         } catch (\Throwable $e) {
             return response()->json([
-                'message' => 'Error interno (dev)',
+                'message' => 'Error interno',
                 'error'   => $e->getMessage(),
                 'trace'   => array_slice($e->getTrace(), 0, 3),
             ], 500);
         }
     }
 
-    /**
-     * Obtener historial del emprendedor.
-     */
     public function history(Entrepreneur $entrepreneur)
     {
-        // Si no tienes una tabla de log, puedes devolver solo sus datos y timestamps:
         $history = [
             [
                 'created_at' => $entrepreneur->created_at,
@@ -361,7 +341,7 @@ class EntrepreneurController extends Controller
 
     public function count()
     {
-        $count = Entrepreneur::count();  // Esto es solo un ejemplo
+        $count = Entrepreneur::count();
         return response()->json(['count' => $count]);
     }
 
@@ -369,57 +349,55 @@ class EntrepreneurController extends Controller
     {
         return response()->json(auth()->user());
     }
+
     public function getCategories($entrepreneur_id)
-{
-    // Obtener las categorías asociadas al emprendedor
-    $entrepreneur = Entrepreneur::find($entrepreneur_id);
-    if (!$entrepreneur) {
-        return response()->json(['message' => 'Emprendedor no encontrado'], 404);
-    }
-
-    // Devolver las categorías asociadas
-    $categories = $entrepreneur->categories;
-    return response()->json($categories);
-}
-public function myProducts()
-{
-    $user = auth()->user();
-
-    if (!$user) {
-        return response()->json(['message' => 'Usuario no autenticado'], 401);
-    }
-
-    if (!$user->entrepreneur) {
-
-        return response()->json(['message' => 'No tienes un perfil de emprendedor'], 403);
-    }
-
-    $entrepreneurId = $user->entrepreneur->id;
-
-    $products = Product::with(['categories', 'place', 'entrepreneur'])
-    ->where('entrepreneur_id', $entrepreneurId)
-    ->get();
-
-
-    return response()->json($products);
-}
-public function authenticated()
-{
-    try {
-        $entrepreneur = auth()->user()->entrepreneur;
-
+    {
+        $entrepreneur = Entrepreneur::find($entrepreneur_id);
         if (!$entrepreneur) {
-            return response()->json(['error' => 'No se encontró el emprendedor'], 404);
+            return response()->json(['message' => 'Emprendedor no encontrado'], 404);
         }
 
-        return response()->json([
-            'entrepreneur' => $entrepreneur->load('user'),
-            'history' => $entrepreneur->history()->latest()->get()
-        ]);
-    } catch (\Exception $e) {
-        \Log::error('Error en authenticated(): ' . $e->getMessage());
-        return response()->json(['error' => 'Error interno del servidor'], 500);
+        $categories = $entrepreneur->categories;
+        return response()->json($categories);
     }
-}
 
+    public function myProducts()
+    {
+        $user = auth()->user();
+
+        if (!$user) {
+            return response()->json(['message' => 'Usuario no autenticado'], 401);
+        }
+
+        if (!$user->entrepreneur) {
+            return response()->json(['message' => 'No tienes un perfil de emprendedor'], 403);
+        }
+
+        $entrepreneurId = $user->entrepreneur->id;
+
+        $products = Product::with(['categories', 'place', 'entrepreneur'])
+            ->where('entrepreneur_id', $entrepreneurId)
+            ->get();
+
+        return response()->json($products);
+    }
+
+    public function authenticated()
+    {
+        try {
+            $entrepreneur = auth()->user()->entrepreneur;
+
+            if (!$entrepreneur) {
+                return response()->json(['error' => 'No se encontró el emprendedor'], 404);
+            }
+
+            return response()->json([
+                'entrepreneur' => $entrepreneur->load('user'),
+                'history' => $entrepreneur->history()->latest()->get()
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error en authenticated(): ' . $e->getMessage());
+            return response()->json(['error' => 'Error interno del servidor'], 500);
+        }
+    }
 }

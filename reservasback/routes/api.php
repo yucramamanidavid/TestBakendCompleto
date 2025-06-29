@@ -144,9 +144,13 @@ Route::put('entrepreneur-categories/{entrepreneur_id}/{category_id}', [Entrepren
 Route::delete('entrepreneur-categories/{entrepreneur_id}/{category_id}', [EntrepreneurCategoryController::class, 'destroy']);
 
 // === PRODUCTOS ===
-// Rutas públicas para listar y ver productos
+// Primero la ruta específica
+Route::middleware('auth:sanctum')->get('products/my', [ProductController::class, 'myProducts']);
+
+// Luego las rutas públicas
 Route::get('products', [ProductController::class, 'index']);
 Route::get('products/{id}', [ProductController::class, 'show']);
+
 
 // Rutas protegidas para gestionar productos (crear, actualizar, borrar, imágenes)
 Route::middleware('auth:sanctum')->group(function () {
