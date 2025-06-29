@@ -133,6 +133,6 @@ class AssociationControllerUnitTest extends TestCase
         $response = $controller->count();
 
         $this->assertEquals(200, $response->status());
-        $this->assertEquals(json_encode(5), $response->getContent());
+        $this->assertEquals(json_encode(['count' => 5]), $response->getContent());
     }
 }
