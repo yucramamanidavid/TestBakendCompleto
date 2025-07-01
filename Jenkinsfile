@@ -10,8 +10,8 @@ pipeline {
             steps {
                 timeout(time: 2, unit: 'MINUTES') {
                     git branch: 'main',
-                        credentialsId: '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',
-                        url: 'https://github.com/ROSAURA12345/TestWebcapa.git'
+                        credentialsId: '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',
+                        url: 'https://github.com/yucramamanidavid/TestBakendCompleto.git'
                 }
             }
         }
@@ -77,7 +77,7 @@ pipeline {
                     sh '''
                         cd reservasback
                         sonar-scanner \
-                        -Dsonar.projectKey=TestWebcapa \
+                        -Dsonar.projectKey=TestBakendCapachicacompleto \
                         -Dsonar.sources=app \
                         -Dsonar.tests=tests \
                         -Dsonar.php.coverage.reportPaths=storage/coverage.xml \
