@@ -2,19 +2,19 @@
 
 namespace Tests\Feature;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 use App\Models\Place;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 
 class PlaceControllerTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_index_returns_places()
+    public function test_index_returns_places(): void
     {
-        Place::create([
+        Place::factory()->create([
             'name' => 'Lago Titicaca',
             'excerpt' => 'Lugar turístico',
             'activities' => ['bote', 'pesca'],
@@ -22,16 +22,16 @@ class PlaceControllerTest extends TestCase
             'image_url' => null,
             'latitude' => -15.5,
             'longitude' => -70.1,
-            'category' => 'Lago'
+            'category' => 'Lago',
         ]);
 
         $response = $this->getJson('/api/places');
 
-        $response->assertStatus(200)
+        $response->assertOk()
                  ->assertJsonFragment(['name' => 'Lago Titicaca']);
     }
 
-    public function test_store_creates_place()
+    public function test_store_creates_place(): void
     {
         Storage::fake('public');
 
@@ -48,15 +48,18 @@ class PlaceControllerTest extends TestCase
             'category' => 'Montaña',
         ];
 
-        $response = $this->postJson('/api/places', $data);
+        $response = $this->postJson('/api/places', $data, ['Accept' => 'application/json']);
 
-        $response->assertStatus(201)
+        $response->assertCreated()
                  ->assertJsonFragment(['name' => 'Nuevo Lugar']);
+
+        $this->assertDatabaseHas('places', ['name' => 'Nuevo Lugar']);
+        Storage::disk('public')->assertExists('places/' . $file->hashName());
     }
 
-    public function test_show_returns_place()
+    public function test_show_returns_place(): void
     {
-        $place = Place::create([
+        $place = Place::factory()->create([
             'name' => 'Mirador',
             'excerpt' => 'Vista panorámica',
             'activities' => [],
@@ -64,26 +67,20 @@ class PlaceControllerTest extends TestCase
             'image_url' => null,
             'latitude' => -13.1,
             'longitude' => -74.1,
-            'category' => 'Mirador'
+            'category' => 'Mirador',
         ]);
 
         $response = $this->getJson("/api/places/{$place->id}");
 
-        $response->assertStatus(200)
+        $response->assertOk()
                  ->assertJsonFragment(['name' => 'Mirador']);
     }
 
-    public function test_update_modifies_place()
+    public function test_update_modifies_place(): void
     {
-        $place = Place::create([
+        $place = Place::factory()->create([
             'name' => 'Lugar Antiguo',
             'excerpt' => 'Antiguo texto',
-            'activities' => [],
-            'stats' => [],
-            'image_url' => null,
-            'latitude' => 0,
-            'longitude' => 0,
-            'category' => 'Otro'
         ]);
 
         $newData = [
@@ -91,28 +88,24 @@ class PlaceControllerTest extends TestCase
             'excerpt' => 'Texto actualizado',
         ];
 
-        $response = $this->putJson("/api/places/{$place->id}", $newData);
+        $response = $this->putJson("/api/places/{$place->id}", $newData, ['Accept' => 'application/json']);
 
-        $response->assertStatus(200)
+        $response->assertOk()
                  ->assertJsonFragment(['name' => 'Lugar Actualizado']);
+
+        $this->assertDatabaseHas('places', ['name' => 'Lugar Actualizado']);
     }
 
-    public function test_destroy_deletes_place()
+    public function test_destroy_deletes_place(): void
     {
-        $place = Place::create([
+        $place = Place::factory()->create([
             'name' => 'Temporal',
             'excerpt' => 'Será eliminado',
-            'activities' => [],
-            'stats' => [],
-            'image_url' => null,
-            'latitude' => 0,
-            'longitude' => 0,
-            'category' => 'Temporal'
         ]);
 
         $response = $this->deleteJson("/api/places/{$place->id}");
 
-        $response->assertStatus(204);
+        $response->assertNoContent();
         $this->assertDatabaseMissing('places', ['id' => $place->id]);
     }
 }
