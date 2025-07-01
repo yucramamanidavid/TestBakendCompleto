@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Place extends Model
 {
+    use HasFactory;
     protected $fillable = [
         'name',
         'excerpt',

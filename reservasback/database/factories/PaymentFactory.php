@@ -13,7 +13,7 @@ class PaymentFactory extends Factory
     public function definition(): array
     {
         return [
-            'reservation_id' => \App\Models\Reservation::factory(),
+            'reservation_id' => Reservation::factory(),
             'payment_method' => 'efectivo',
             'status' => 'enviado',
             'is_confirmed' => false,
