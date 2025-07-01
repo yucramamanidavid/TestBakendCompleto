@@ -5,13 +5,15 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+
 class ReservationTourExtra extends Model
 {
+    use HasFactory;
     protected $fillable = [
         'reservation_id', 'tour_extra_id'
     ];
 
-    public function extra()
+    public function tourextra()
     {
         return $this->belongsTo(TourExtra::class, 'tour_extra_id');
     }
@@ -19,5 +21,9 @@ class ReservationTourExtra extends Model
     public function reservation()
     {
         return $this->belongsTo(Reservation::class, 'reservation_id');
+    }
+    public function isPremium(): bool
+    {
+        return $this->price > 100;
     }
 }

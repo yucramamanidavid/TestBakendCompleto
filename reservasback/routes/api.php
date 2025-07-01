@@ -27,6 +27,10 @@ use Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful;
 
 use Illuminate\Support\Facades\Route;
 
+
+Route::post('/reservation-tour-extras', [ReservationTourExtraController::class, 'store']);
+Route::delete('/reservation-tour-extras/{id}', [ReservationTourExtraController::class, 'destroy']);
+
 // Autenticación
 Route::middleware([EnsureFrontendRequestsAreStateful::class])->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
@@ -47,6 +51,7 @@ Route::apiResource('tours', TourController::class);
 
 // Reservas
 Route::middleware('auth:sanctum')->group(function () {
+    Route::delete('/payments/{payment}', [PaymentController::class, 'destroy']);
     Route::get('/reservations', [ReservationController::class, 'userReservations']);
     Route::get('/entrepreneur/{entrepreneurId}/reservations', [ReservationController::class, 'entrepreneurReservations']);
     Route::post('/reservations', [ReservationController::class, 'store']);
@@ -95,6 +100,7 @@ Route::middleware(['auth:sanctum', 'role:super-admin'])->group(function () {
 
 // Galería
 Route::middleware('auth:sanctum')->group(function () {
+    Route::delete('/payments/{id}', [PaymentController::class, 'destroy']);
     Route::apiResource('gallery', GalleryController::class);
 });
 Route::middleware(['auth:sanctum', 'role:super-admin'])->group(function () {
