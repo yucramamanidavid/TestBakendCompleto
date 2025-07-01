@@ -1,7 +1,7 @@
 <?php
 
 namespace Database\Factories;
-use App\Models\User;
+
 use App\Models\Product;
 use App\Models\Entrepreneur;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -21,7 +21,7 @@ class ProductFactory extends Factory
             'duration' => '1h',
             'main_image' => null,
             'is_active' => true,
-            'user_id' => User::factory(), 
+
         ];
     }
 }

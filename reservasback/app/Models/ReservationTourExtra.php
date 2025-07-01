@@ -13,7 +13,7 @@ class ReservationTourExtra extends Model
         'reservation_id', 'tour_extra_id'
     ];
 
-    public function tourextra()
+    public function extra()
     {
         return $this->belongsTo(TourExtra::class, 'tour_extra_id');
     }
@@ -22,8 +22,5 @@ class ReservationTourExtra extends Model
     {
         return $this->belongsTo(Reservation::class, 'reservation_id');
     }
-    public function isPremium(): bool
-    {
-        return $this->price > 100;
-    }
+
 }
